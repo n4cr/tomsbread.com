@@ -25,8 +25,8 @@ proc_name = 'tombakery'
 daemon = False
 pidfile = None
 umask = 0
-user = root
-group = root
+user = 'root'
+group = 'root'
 tmp_upload_dir = None
 
 # SSL
