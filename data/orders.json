@@ -1,0 +1,20 @@
+[
+  {
+    "id": "5d012ea0-bf6b-4ef8-91ff-f0466d4a1a05",
+    "baking_day_id": "42fe5761-4dc7-4198-b650-654a13087dbe",
+    "customer_name": "Nasir",
+    "customer_phone": "123123",
+    "bread_type_id": "1088a179-d945-4082-96ae-bcf2c7aad06b",
+    "quantity": 2,
+    "created_at": "2024-12-01T13:30:16.235630"
+  },
+  {
+    "id": "e58d651b-2d5b-4b09-bad7-69c5194e87bc",
+    "baking_day_id": "64f34222-0825-46c8-9f8e-e6636cb88204",
+    "customer_name": "nina",
+    "customer_phone": "+31 12 345 6789",
+    "bread_type_id": "1088a179-d945-4082-96ae-bcf2c7aad06b",
+    "quantity": 1,
+    "created_at": "2024-12-01T14:46:46.478378"
+  }
+]

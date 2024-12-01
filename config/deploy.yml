@@ -1,0 +1,42 @@
+service: tombakery
+
+image: n4cr/tombakery
+
+servers:
+  web:
+    hosts:
+      - 5.78.74.178
+    cmd: gunicorn -b 0.0.0.0:8000 bakery.wsgi:application
+    options:
+      memory: 1024m
+
+registry:
+  server: ghcr.io
+  username: n4cr
+
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# env:
+#   clear:
+#   secret:
+
+
+volumes:
+  - "/media/tombakery:/app/data"
+
+builder:
+  arch: amd64
+  dockerfile: "./Dockerfile"
+  context: "./"
+  remote: ssh://root@5.78.74.178
+
+proxy:
+  host: tombakery.semicolon.io
+  ssl: true
+  forward_headers: true
+  app_port: 9000
+  healthcheck:
+    interval: 3
+    path: /health
+    timeout: 3  

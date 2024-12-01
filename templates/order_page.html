@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Order for {{ baking_day.date.strftime('%A, %B %d, %Y') }}</h3>
+            </div>
+            <div class="card-body">
+                {% if can_order %}
+                    <form action="{{ url_for('submit_order', share_link=baking_day.share_link) }}" method="POST">
+                        <div class="mb-4">
+                            <label class="form-label">Your Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Select Your Breads</h5>
+                            <div class="alert alert-info">
+                                Maximum 5 loaves total per order
+                            </div>
+                            
+                            {% for option in baking_day.bread_options %}
+                                {% if option.available > 0 %}
+                                    <div class="card mb-2">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col">
+                                                    <h6 class="mb-0">{{ option.bread_type_name }}</h6>
+                                                    <small class="text-muted">{{ option.available }} available</small>
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" 
+                                                           name="quantities[{{ option.bread_type_id }}]" 
+                                                           class="form-control quantity-input" 
+                                                           value="0"
+                                                           min="0" 
+                                                           max="{{ [option.available, 5] | min }}"
+                                                           oninput="updateTotal()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="alert alert-primary mb-4">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <strong>Total Loaves:</strong>
+                                </div>
+                                <div class="col-auto">
+                                    <span id="total-loaves">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="submit-button" disabled>
+                            Place Order
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning text-center">
+                        <h4>Sorry, ordering is closed for this baking day</h4>
+                        <p>Orders must be placed at least 36 hours before the baking day.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateTotal() {
+    const inputs = document.querySelectorAll('.quantity-input');
+    let total = 0;
+    
+    inputs.forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+    
+    document.getElementById('total-loaves').textContent = total;
+    const submitButton = document.getElementById('submit-button');
+    
+    // Enable submit button only if total is between 1 and 5
+    submitButton.disabled = total < 1 || total > 5;
+}
+
+// Initialize total on page load
+document.addEventListener('DOMContentLoaded', updateTotal);
+</script>
+{% endblock %} 

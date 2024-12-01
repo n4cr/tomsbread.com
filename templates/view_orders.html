@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="mb-3">
+            <a href="{{ url_for('baker_home') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Home
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Orders for {{ baking_day.date.strftime('%A, %B %d, %Y') }}</h3>
+            </div>
+            <div class="card-body">
+                <!-- Summary by bread type -->
+                <h4 class="mb-3">Summary by Bread Type</h4>
+                {% for bread_option in baking_day.bread_options %}
+                    <div class="mb-4">
+                        <h5>{{ bread_option.bread_type_name }}</h5>
+                        
+                        <div class="progress mb-2">
+                            {% set percentage = (bread_option.ordered_quantity / bread_option.max_quantity * 100) | round %}
+                            <div class="progress-bar {% if percentage > 80 %}bg-warning{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ percentage }}%">
+                                {{ bread_option.ordered_quantity }}/{{ bread_option.max_quantity }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <!-- Group orders by order_group_id -->
+                <h4 class="mb-3 mt-4">Customer Orders</h4>
+                {% set grouped_orders = {} %}
+                {% for order in orders %}
+                    {% if order.order_group_id not in grouped_orders %}
+                        {% set _ = grouped_orders.update({order.order_group_id: {
+                            'customer_name': order.customer_name,
+                            'customer_phone': order.customer_phone,
+                            'created_at': order.created_at,
+                            'bread_items': []
+                        }}) %}
+                    {% endif %}
+                    {% set _ = grouped_orders[order.order_group_id]['bread_items'].append({
+                        'bread_type_name': order.bread_type_name,
+                        'quantity': order.quantity
+                    }) %}
+                {% endfor %}
+
+                {% if grouped_orders %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Order Details</th>
+                                    <th>Order Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order_id, order in grouped_orders.items() %}
+                                    <tr>
+                                        <td>{{ order.customer_name }}</td>
+                                        <td>{{ order.customer_phone }}</td>
+                                        <td>
+                                            <ul class="list-unstyled mb-0">
+                                                {% for item in order.bread_items %}
+                                                    <li>{{ item.quantity }}× {{ item.bread_type_name }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </td>
+                                        <td>{{ order.created_at.strftime('%I:%M %p') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No orders yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
