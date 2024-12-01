@@ -6,7 +6,7 @@ servers:
   web:
     hosts:
       - 5.78.74.178
-    cmd: gunicorn -b 0.0.0.0:8000 bakery.wsgi:application
+    cmd: gunicorn -b 0.0.0.0:8000  wsgi:app
     options:
       memory: 1024m
 
@@ -32,7 +32,7 @@ builder:
   remote: ssh://root@5.78.74.178
 
 proxy:
-  host: tombakery.semicolon.io
+  host: tomsbakery.semicolon.io
   ssl: true
   forward_headers: true
   app_port: 9000
