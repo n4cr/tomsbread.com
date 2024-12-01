@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
 import json
 import uuid
@@ -323,7 +323,26 @@ def view_orders(share_link):
 
 @app.route('/health')
 def health_check():
-    return 'OK', 200
+    try:
+        # Try to read the data directory to ensure it's accessible
+        if not os.path.exists(DATA_DIR):
+            return 'Data directory not accessible', 500
+            
+        # Try to load the JSON files to ensure they're readable
+        get_bread_types()
+        get_baking_days()
+        get_orders()
+        
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     # Create data files if they don't exist
