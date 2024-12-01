@@ -1,4 +1,5 @@
 # Gunicorn configuration file
+from logging import root
 import multiprocessing
 
 # Server socket
@@ -24,8 +25,8 @@ proc_name = 'tombakery'
 daemon = False
 pidfile = None
 umask = 0
-user = None
-group = None
+user = root
+group = root
 tmp_upload_dir = None
 
 # SSL

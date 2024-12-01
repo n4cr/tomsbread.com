@@ -8,7 +8,7 @@ servers:
       - 5.78.74.178
     cmd: gunicorn -b 0.0.0.0:8000 --config gunicorn.conf.py wsgi:app
     options:
-      memory: 256m
+      memory: 128m
 
 registry:
   server: ghcr.io
@@ -23,7 +23,7 @@ registry:
 
 
 volumes:
-  - "/media/tombakery:/app/data"
+  - "/media/tombakery-demo:/app/data"
 
 builder:
   arch: amd64
@@ -32,7 +32,7 @@ builder:
   remote: ssh://root@5.78.74.178
 
 proxy:
-  host: tomsbakery.semicolon.io
+  host: tomdemo.semicolon.io
   ssl: true
   forward_headers: true
   app_port: 8000
