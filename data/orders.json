@@ -16,5 +16,25 @@
     "bread_type_id": "1088a179-d945-4082-96ae-bcf2c7aad06b",
     "quantity": 1,
     "created_at": "2024-12-01T14:46:46.478378"
+  },
+  {
+    "id": "ac26b899-080b-45ea-9d04-a72440b469ad",
+    "order_group_id": "2ee667a8-3271-4344-9085-9036b0cc70cf",
+    "baking_day_id": "fe1d6d41-46e8-436d-b7af-81bb27cbd58c",
+    "customer_name": "Brown",
+    "customer_phone": "+31639881706",
+    "bread_type_id": "dffd6d67-892f-457c-9145-138ecbea03fe",
+    "quantity": 1,
+    "created_at": "2024-12-02T00:12:24.101970"
+  },
+  {
+    "id": "f7b1a4e4-4cb6-45d1-afa3-e2528de03aef",
+    "order_group_id": "680fa00d-fd7a-49f0-8e1b-1becbc7c7daf",
+    "baking_day_id": "fe1d6d41-46e8-436d-b7af-81bb27cbd58c",
+    "customer_name": "James",
+    "customer_phone": "10",
+    "bread_type_id": "dffd6d67-892f-457c-9145-138ecbea03fe",
+    "quantity": 1,
+    "created_at": "2024-12-02T00:14:52.248623"
   }
 ]

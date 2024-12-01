@@ -72,13 +72,13 @@ def save_order(baking_day_id, customer_name, customer_phone, bread_orders):
     bread_orders is a list of dicts with bread_type_id and quantity
     """
     orders = get_orders()
-    order_id = str(uuid.uuid4())
+    order_group_id = str(uuid.uuid4())
     created_at = datetime.now().isoformat()
     
     for bread_order in bread_orders:
         order = {
             'id': str(uuid.uuid4()),
-            'order_group_id': order_id,  # Group multiple bread types under one order
+            'order_group_id': order_group_id,
             'baking_day_id': baking_day_id,
             'customer_name': customer_name,
             'customer_phone': customer_phone,
@@ -89,7 +89,7 @@ def save_order(baking_day_id, customer_name, customer_phone, bread_orders):
         orders.append(order)
     
     save_json_file(ORDERS_FILE, orders)
-    return order_id
+    return order_group_id
 
 def get_baking_day_by_share_link(share_link):
     baking_days = get_baking_days()
@@ -212,7 +212,32 @@ def order_page(share_link):
     if not baking_day:
         return 'Baking day not found', 404
     
-    # Check if ordering window is still open (>36 hours before baking)
+    # Check if this is an order confirmation
+    order_success = request.args.get('order_success', type=bool)
+    order_details = None
+    
+    if order_success:
+        order_id = request.args.get('order_id')
+        if order_id:  # Only process if order_id is present
+            orders = get_orders()
+            order_items = [
+                order for order in orders 
+                if order.get('order_group_id') == order_id  # Use .get() to safely access the key
+            ]
+            if order_items:
+                order_details = {
+                    'customer_name': request.args.get('customer_name'),
+                    'customer_phone': request.args.get('customer_phone'),
+                    'bread_items': [
+                        {
+                            'bread_type_name': get_bread_type_by_id(item['bread_type_id'])['name'],
+                            'quantity': item['quantity']
+                        }
+                        for item in order_items
+                    ]
+                }
+    
+    # Check if ordering window is still open
     cutoff_time = datetime.combine(baking_day['date'], datetime.min.time()) - timedelta(hours=36)
     can_order = datetime.now() < cutoff_time
     
@@ -230,7 +255,9 @@ def order_page(share_link):
     
     return render_template('order_page.html', 
                          baking_day=baking_day, 
-                         can_order=can_order)
+                         can_order=can_order,
+                         order_success=order_success,
+                         order_details=order_details)
 
 @app.route('/submit_order/<share_link>', methods=['POST'])
 def submit_order(share_link):
@@ -257,8 +284,10 @@ def submit_order(share_link):
             bread_type_id = key[len('quantities['):-1]  # Extract bread_type_id from the field name
             quantity = int(value) if value.isdigit() else 0
             if quantity > 0:
+                bread_type = get_bread_type_by_id(bread_type_id)
                 bread_orders.append({
                     'bread_type_id': bread_type_id,
+                    'bread_type_name': bread_type['name'] if bread_type else 'Unknown',
                     'quantity': quantity
                 })
                 total_quantity += quantity
@@ -285,10 +314,15 @@ def submit_order(share_link):
                     return redirect(url_for('order_page', share_link=share_link))
     
     # Save the order
-    save_order(baking_day['id'], name, phone, bread_orders)
-    flash('Your order has been submitted successfully!')
+    order_id = save_order(baking_day['id'], name, phone, bread_orders)
     
-    return redirect(url_for('order_page', share_link=share_link))
+    # Redirect to order page with success parameter and order details
+    return redirect(url_for('order_page', 
+                          share_link=share_link,
+                          order_success=True,
+                          order_id=order_id,
+                          customer_name=name,
+                          customer_phone=phone))
 
 @app.route('/view_orders/<share_link>')
 def view_orders(share_link):
