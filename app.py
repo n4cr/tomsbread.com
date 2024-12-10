@@ -175,6 +175,22 @@ def baker_home():
                          upcoming_days=upcoming_days,
                          weekdays=WEEKDAYS)
 
+@app.route('/manage')
+def manage_baking():
+    bread_types = get_bread_types()
+    return render_template('manage_baking.html', 
+                         bread_types=bread_types,
+                         weekdays=WEEKDAYS)
+
+@app.route('/delete_bread_type/<bread_type_id>', methods=['POST'])
+def delete_bread_type(bread_type_id):
+    bread_types = get_bread_types()
+    # Remove the bread type
+    bread_types = [bt for bt in bread_types if bt['id'] != bread_type_id]
+    save_json_file(BREAD_TYPES_FILE, bread_types)
+    flash('Bread type deleted successfully!')
+    return redirect(url_for('manage_baking'))
+
 @app.route('/add_bread_type', methods=['POST'])
 def add_bread_type():
     name = request.form.get('name')
@@ -182,7 +198,7 @@ def add_bread_type():
         flash('Bread type added successfully!')
     else:
         flash('This bread type already exists!')
-    return redirect(url_for('baker_home'))
+    return redirect(url_for('manage_baking'))
 
 @app.route('/add_baking_day', methods=['POST'])
 def add_baking_day():
