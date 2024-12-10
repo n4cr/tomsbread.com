@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0 text-center fs-3">Welcome Tom!</h2>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="mb-4">
+                        <label class="form-label fs-4">Enter Password</label>
+                        <input type="password" 
+                               name="password" 
+                               class="form-control form-control-lg" 
+                               required 
+                               autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-unlock"></i> Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
