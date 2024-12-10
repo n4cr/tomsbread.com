@@ -4,84 +4,71 @@
 <!-- Upcoming Baking Days Section -->
 <div class="row">
     <div class="col-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="mb-0">Upcoming Baking Days</h3>
-            <a href="{{ url_for('manage_baking') }}" class="btn btn-primary">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Upcoming Baking Days</h2>
+            <a href="{{ url_for('manage_baking') }}" class="btn btn-primary btn-lg">
                 <i class="bi bi-plus-circle"></i> Add Baking Day
             </a>
         </div>
 
         {% if upcoming_days %}
-        <div class="card">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Bread Options</th>
-                                <th>Actions</th>
-                                <th>Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for day in upcoming_days|sort(attribute='date', reverse=true) %}
-                            <tr class="baking-day-row {% if loop.index > 5 %}d-none extra-row{% endif %}">
-                                <td>
-                                    <a href="{{ url_for('view_orders', share_link=day.share_link) }}" 
-                                       class="text-decoration-none text-dark">
-                                        <strong>{{ day.date.strftime('%A') }}</strong><br>
-                                        <small class="text-muted">{{ day.date.strftime('%B %d, %Y') }}</small>
-                                    </a>
-                                </td>
-                                <td>
-                                    <ul class="list-unstyled mb-0">
-                                        {% for option in day.bread_options %}
-                                        <li>{{ option.bread_type_name }} (max: {{ option.max_quantity }})</li>
-                                        {% endfor %}
-                                    </ul>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-outline-primary btn-sm" 
-                                                onclick="copyToClipboard('{{ request.url_root }}orders/{{ day.share_link }}')">
-                                            <i class="bi bi-clipboard"></i> Copy Link
-                                        </button>
-                                        <a href="#" 
-                                           onclick="shareOnWhatsApp('{{ request.url_root }}orders/{{ day.share_link }}', '{{ day.date.strftime('%A, %B %d') }}')"
-                                           class="btn btn-outline-success btn-sm">
-                                            <i class="bi bi-whatsapp"></i> Share
-                                        </a>
-                                    </div>
-                                </td>
-                                <td>
-                                    <form action="{{ url_for('delete_baking_day_route', baking_day_id=day.id) }}" 
-                                          method="POST" 
-                                          onsubmit="return confirmDelete('{{ day.date.strftime('%A, %B %d') }}')">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            {% for day in upcoming_days|sort(attribute='date', reverse=true) %}
+            <div class="card mb-3 {% if loop.index > 5 %}d-none extra-row{% endif %}">
+                <div class="card-header bg-light">
+                    <h3 class="mb-0 fs-4">
+                        <a href="{{ url_for('view_orders', share_link=day.share_link) }}" 
+                           class="text-decoration-none text-dark d-block">
+                            <span class="fw-bold">{{ day.date.strftime('%A') }}</span><br>
+                            <span class="text-muted fs-5">{{ day.date.strftime('%B %d, %Y') }}</span>
+                        </a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h4 class="fs-5 mb-2">Breads for this day:</h4>
+                        {% for option in day.bread_options %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <span class="fs-5">{{ option.bread_type_name }}</span>
+                            <span class="badge bg-primary rounded-pill fs-6">max: {{ option.max_quantity }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-lg" 
+                                onclick="copyToClipboard('{{ request.url_root }}orders/{{ day.share_link }}')">
+                            <i class="bi bi-clipboard"></i> Copy Order Link
+                        </button>
+                        <a href="#" 
+                           onclick="shareOnWhatsApp('{{ request.url_root }}orders/{{ day.share_link }}', '{{ day.date.strftime('%A, %B %d') }}')"
+                           class="btn btn-success btn-lg">
+                            <i class="bi bi-whatsapp"></i> Share on WhatsApp
+                        </a>
+                        <form action="{{ url_for('delete_baking_day_route', baking_day_id=day.id) }}" 
+                              method="POST" 
+                              onsubmit="return confirmDelete('{{ day.date.strftime('%A, %B %d') }}')"
+                              class="mt-2">
+                            <button type="submit" class="btn btn-outline-danger btn-lg w-100">
+                                <i class="bi bi-trash"></i> Delete This Baking Day
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
+            
             {% if upcoming_days|length > 5 %}
-            <div class="card-footer text-center">
-                <button class="btn btn-link" type="button" onclick="toggleBakingDays()">
-                    <span id="toggleText">Show All</span>
+            <div class="text-center mt-3">
+                <button class="btn btn-outline-primary btn-lg" type="button" onclick="toggleBakingDays()">
+                    <span id="toggleText">Show More Days</span>
                 </button>
             </div>
             {% endif %}
-        </div>
         {% else %}
         <div class="card">
             <div class="card-body text-center py-5">
-                <h4 class="text-muted mb-3">No upcoming baking days scheduled</h4>
-                <p class="mb-0">Click the "Add Baking Day" button to schedule your first baking day.</p>
+                <h3 class="text-muted mb-3">No upcoming baking days scheduled</h3>
+                <p class="fs-5 mb-0">Click the "Add Baking Day" button to schedule your first baking day.</p>
             </div>
         </div>
         {% endif %}
@@ -91,7 +78,7 @@
 <script>
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        alert('Order link copied to clipboard!');
+        alert('Order link copied! You can now paste it anywhere.');
     });
 }
 
@@ -108,16 +95,16 @@ function toggleBakingDays() {
     extraRows.forEach(row => {
         if (row.classList.contains('d-none')) {
             row.classList.remove('d-none');
-            toggleText.textContent = 'Show Less';
+            toggleText.textContent = 'Show Fewer Days';
         } else {
             row.classList.add('d-none');
-            toggleText.textContent = 'Show All';
+            toggleText.textContent = 'Show More Days';
         }
     });
 }
 
 function confirmDelete(date) {
-    return confirm(`Are you sure you want to delete the baking day for ${date}?\nThis will also delete all orders for this day.`);
+    return confirm(`Are you sure you want to delete the baking day for ${date}?\n\nThis will also delete all orders for this day.`);
 }
 </script>
 {% endblock %} 
