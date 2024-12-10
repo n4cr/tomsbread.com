@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from datetime import datetime, timedelta
 import json
 import uuid
 import os
 import calendar
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
@@ -140,16 +141,41 @@ def delete_baking_day(baking_day_id):
     save_json_file(BAKING_DAYS_FILE, baking_days)
     save_json_file(ORDERS_FILE, orders)
 
-@app.route('/delete_baking_day/<baking_day_id>', methods=['POST'])
-def delete_baking_day_route(baking_day_id):
-    baking_day = get_baking_day_by_id(baking_day_id)
-    if baking_day:
-        delete_baking_day(baking_day_id)
-        flash('Baking day deleted successfully!')
-    return redirect(url_for('baker_home'))
+def check_password(password):
+    try:
+        with open('password.json', 'r') as f:
+            password_data = json.load(f)
+            return password == password_data.get('password')
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if check_password(password):
+            session['logged_in'] = True
+            return redirect(url_for('baker_home'))
+        else:
+            flash('Incorrect password')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 # Routes
 @app.route('/')
+@login_required
 def baker_home():
     bread_types = get_bread_types()
     baking_days = get_baking_days()
@@ -176,6 +202,7 @@ def baker_home():
                          weekdays=WEEKDAYS)
 
 @app.route('/manage')
+@login_required
 def manage_baking():
     bread_types = get_bread_types()
     return render_template('manage_baking.html', 
@@ -183,15 +210,16 @@ def manage_baking():
                          weekdays=WEEKDAYS)
 
 @app.route('/delete_bread_type/<bread_type_id>', methods=['POST'])
+@login_required
 def delete_bread_type(bread_type_id):
     bread_types = get_bread_types()
-    # Remove the bread type
     bread_types = [bt for bt in bread_types if bt['id'] != bread_type_id]
     save_json_file(BREAD_TYPES_FILE, bread_types)
     flash('Bread type deleted successfully!')
     return redirect(url_for('manage_baking'))
 
 @app.route('/add_bread_type', methods=['POST'])
+@login_required
 def add_bread_type():
     name = request.form.get('name')
     if name and save_bread_type(name):
@@ -201,15 +229,14 @@ def add_bread_type():
     return redirect(url_for('manage_baking'))
 
 @app.route('/add_baking_day', methods=['POST'])
+@login_required
 def add_baking_day():
     weekday = request.form.get('weekday')
     bread_types = request.form.getlist('bread_types[]')
     quantities = request.form.getlist('quantities[]')
     
     if weekday and bread_types and quantities:
-        # Calculate the next occurrence of the selected weekday
         next_date = get_next_weekday(weekday)
-        
         bread_options = []
         for bread_type_id, quantity in zip(bread_types, quantities):
             bread_options.append({
@@ -222,40 +249,34 @@ def add_baking_day():
     
     return redirect(url_for('baker_home'))
 
+@app.route('/delete_baking_day/<baking_day_id>', methods=['POST'])
+@login_required
+def delete_baking_day_route(baking_day_id):
+    baking_day = get_baking_day_by_id(baking_day_id)
+    if baking_day:
+        delete_baking_day(baking_day_id)
+        flash('Baking day deleted successfully!')
+    return redirect(url_for('baker_home'))
+
+def get_order_deadline(baking_date):
+    """Calculate the order deadline (10 PM two days before baking)"""
+    # Convert to datetime to handle time
+    baking_datetime = datetime.combine(baking_date, datetime.min.time())
+    # Go back 2 days and set time to 22:00 (10 PM)
+    deadline = baking_datetime - timedelta(days=2)
+    deadline = deadline.replace(hour=22, minute=0, second=0, microsecond=0)
+    return deadline
+
 @app.route('/orders/<share_link>')
 def order_page(share_link):
     baking_day = get_baking_day_by_share_link(share_link)
     if not baking_day:
         return 'Baking day not found', 404
     
-    # Check if this is an order confirmation
-    order_success = request.args.get('order_success', type=bool)
-    order_details = None
-    
-    if order_success:
-        order_id = request.args.get('order_id')
-        if order_id:  # Only process if order_id is present
-            orders = get_orders()
-            order_items = [
-                order for order in orders 
-                if order.get('order_group_id') == order_id  # Use .get() to safely access the key
-            ]
-            if order_items:
-                order_details = {
-                    'customer_name': request.args.get('customer_name'),
-                    'customer_phone': request.args.get('customer_phone'),
-                    'bread_items': [
-                        {
-                            'bread_type_name': get_bread_type_by_id(item['bread_type_id'])['name'],
-                            'quantity': item['quantity']
-                        }
-                        for item in order_items
-                    ]
-                }
-    
+    # Calculate order deadline
+    order_deadline = get_order_deadline(baking_day['date'])
     # Check if ordering window is still open
-    cutoff_time = datetime.combine(baking_day['date'], datetime.min.time()) - timedelta(hours=36)
-    can_order = datetime.now() < cutoff_time
+    can_order = datetime.now() < order_deadline
     
     # Get available quantities
     orders = get_orders_for_baking_day(baking_day['id'])
@@ -272,8 +293,7 @@ def order_page(share_link):
     return render_template('order_page.html', 
                          baking_day=baking_day, 
                          can_order=can_order,
-                         order_success=order_success,
-                         order_details=order_details)
+                         order_deadline=order_deadline)
 
 @app.route('/submit_order/<share_link>', methods=['POST'])
 def submit_order(share_link):
@@ -282,8 +302,8 @@ def submit_order(share_link):
         return 'Baking day not found', 404
     
     # Check if ordering window is still open
-    cutoff_time = datetime.combine(baking_day['date'], datetime.min.time()) - timedelta(hours=36)
-    if datetime.now() >= cutoff_time:
+    order_deadline = get_order_deadline(baking_day['date'])
+    if datetime.now() >= order_deadline:
         flash('Sorry, the ordering window has closed for this baking day.')
         return redirect(url_for('order_page', share_link=share_link))
     
@@ -331,8 +351,8 @@ def submit_order(share_link):
     
     # Save the order
     order_id = save_order(baking_day['id'], name, phone, bread_orders)
+    flash('Your order has been submitted successfully!')
     
-    # Redirect to order page with success parameter and order details
     return redirect(url_for('order_page', 
                           share_link=share_link,
                           order_success=True,

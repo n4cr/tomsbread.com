@@ -22,4 +22,6 @@ coverage.xml
 venv
 .DS_Store
 data/*
-!data/.gitkeep 
+!data/.gitkeep
+# Ensure password file is included
+!password.json 

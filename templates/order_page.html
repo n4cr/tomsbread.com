@@ -5,47 +5,16 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="text-center">Order for {{ baking_day.date.strftime('%A, %B %d, %Y') }}</h3>
+                <h3 class="text-center mb-0">Order for {{ baking_day.date.strftime('%A, %B %d') }}</h3>
             </div>
             <div class="card-body">
-                {% if order_success and order_details %}
-                    <div class="text-center mb-4">
-                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">Order Confirmed!</h4>
+                {% if can_order %}
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-clock"></i>
+                        <strong>Order Deadline:</strong> 
+                        {{ order_deadline.strftime('%A, %B %d') }} at 10:00 PM
                     </div>
-                    
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Order Summary</h5>
-                            <div class="mb-3">
-                                <strong>Name:</strong> {{ order_details.customer_name }}<br>
-                                <strong>Phone:</strong> {{ order_details.customer_phone }}
-                            </div>
-                            
-                            <h6>Ordered Items:</h6>
-                            <ul class="list-group mb-3">
-                                {% for item in order_details.bread_items %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ item.bread_type_name }}
-                                        <span class="badge bg-primary rounded-pill">{{ item.quantity }}×</span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                            
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                Your bread will be ready on {{ baking_day.date.strftime('%A, %B %d') }}.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="text-center">
-                        <a href="{{ url_for('order_page', share_link=baking_day.share_link) }}" 
-                           class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle"></i> Place Another Order
-                        </a>
-                    </div>
-                {% elif can_order %}
+
                     <form action="{{ url_for('submit_order', share_link=baking_day.share_link) }}" method="POST">
                         <div class="mb-4">
                             <label class="form-label">Your Name</label>
@@ -105,8 +74,9 @@
                     </form>
                 {% else %}
                     <div class="alert alert-warning text-center">
-                        <h4>Sorry, ordering is closed for this baking day</h4>
-                        <p>Orders must be placed at least 36 hours before the baking day.</p>
+                        <h4 class="alert-heading mb-3">Sorry, ordering is closed</h4>
+                        <p class="mb-0">Orders must be placed before 10:00 PM, two days before the baking day.<br>
+                        The deadline for this baking day was {{ order_deadline.strftime('%A, %B %d') }} at 10:00 PM.</p>
                     </div>
                 {% endif %}
             </div>
