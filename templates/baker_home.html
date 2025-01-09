@@ -16,22 +16,56 @@
             <div class="card mb-3 {% if loop.index > 5 %}d-none extra-row{% endif %}">
                 <div class="card-header bg-light">
                     <h3 class="mb-0 fs-4">
-                        <a href="{{ url_for('view_orders', share_link=day.share_link) }}" 
-                           class="text-decoration-none text-dark d-block">
-                            <span class="fw-bold">{{ day.date.strftime('%A') }}</span><br>
-                            <span class="text-muted fs-5">{{ day.date.strftime('%B %d, %Y') }}</span>
-                        </a>
+                        <span class="fw-bold">{{ day.date.strftime('%A') }}</span><br>
+                        <span class="text-muted fs-5">{{ day.date.strftime('%B %d, %Y') }}</span>
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <h4 class="fs-5 mb-2">Breads for this day:</h4>
-                        {% for option in day.bread_options %}
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span class="fs-5">{{ option.bread_type_name }}</span>
-                            <span class="badge bg-primary rounded-pill fs-6">max: {{ option.max_quantity }}</span>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h4 class="fs-5 mb-2">Breads for this day:</h4>
+                            {% for option in day.bread_options %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                <span class="fs-5">{{ option.bread_type_name }}</span>
+                                <div class="text-end">
+                                    <span class="badge bg-primary rounded-pill fs-6">
+                                        {{ option.ordered_quantity }}/{{ option.max_quantity }}
+                                    </span>
+                                    {% if option.ordered_quantity >= option.max_quantity %}
+                                        <span class="badge bg-danger ms-1">Full</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                        
+                        <div class="col-md-6 mb-3">
+                            <h4 class="fs-5 mb-2">Order Summary:</h4>
+                            <div class="bg-light p-3 rounded">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Orders:</span>
+                                    <strong>{{ day.total_orders }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Loaves:</span>
+                                    <strong>{{ day.total_loaves }}</strong>
+                                </div>
+                                <div class="progress mb-2">
+                                    {% set percentage = (day.total_loaves / day.max_total_loaves * 100) | round %}
+                                    <div class="progress-bar {% if percentage > 80 %}bg-warning{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ percentage }}%">
+                                        {{ percentage }}%
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{{ url_for('view_orders', share_link=day.share_link) }}" 
+                                       class="btn btn-outline-primary btn-lg w-100">
+                                        <i class="bi bi-list-ul"></i> View All Orders
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="d-grid gap-2">

@@ -67,7 +67,7 @@ def save_baking_day(date, bread_options):
     save_json_file(BAKING_DAYS_FILE, baking_days)
     return baking_day
 
-def save_order(baking_day_id, customer_name, customer_phone, bread_orders):
+def save_order(baking_day_id, customer_name, customer_address, bread_orders):
     """
     Save an order with multiple bread types
     bread_orders is a list of dicts with bread_type_id and quantity
@@ -82,7 +82,7 @@ def save_order(baking_day_id, customer_name, customer_phone, bread_orders):
             'order_group_id': order_group_id,
             'baking_day_id': baking_day_id,
             'customer_name': customer_name,
-            'customer_phone': customer_phone,
+            'customer_address': customer_address,
             'bread_type_id': bread_order['bread_type_id'],
             'quantity': bread_order['quantity'],
             'created_at': created_at
@@ -188,11 +188,26 @@ def baker_home():
         if day_date >= today:
             day_copy = day.copy()
             day_copy['date'] = day_date
-            # Add bread type names to options
+            
+            # Get orders for this day
+            orders = get_orders_for_baking_day(day_copy['id'])
+            
+            # Calculate order summaries
+            day_copy['total_orders'] = len(orders)
+            day_copy['total_loaves'] = sum(order['quantity'] for order in orders)
+            day_copy['max_total_loaves'] = sum(option['max_quantity'] for option in day_copy['bread_options'])
+            
+            # Add bread type names and order quantities to options
             for option in day_copy['bread_options']:
                 bread_type = get_bread_type_by_id(option['bread_type_id'])
                 if bread_type:
                     option['bread_type_name'] = bread_type['name']
+                # Calculate ordered quantity for this bread type
+                option['ordered_quantity'] = sum(
+                    order['quantity'] for order in orders 
+                    if order['bread_type_id'] == option['bread_type_id']
+                )
+            
             upcoming_days.append(day_copy)
     
     upcoming_days.sort(key=lambda x: x['date'])
@@ -267,6 +282,11 @@ def get_order_deadline(baking_date):
     deadline = deadline.replace(hour=22, minute=0, second=0, microsecond=0)
     return deadline
 
+def has_existing_order(baking_day_id, customer_name):
+    """Check if a customer has already ordered for this baking day"""
+    orders = get_orders_for_baking_day(baking_day_id)
+    return any(order['customer_name'].lower() == customer_name.lower() for order in orders)
+
 @app.route('/orders/<share_link>')
 def order_page(share_link):
     baking_day = get_baking_day_by_share_link(share_link)
@@ -277,6 +297,12 @@ def order_page(share_link):
     order_deadline = get_order_deadline(baking_day['date'])
     # Check if ordering window is still open
     can_order = datetime.now() < order_deadline
+    
+    # Check for existing order if name is in localStorage (passed via query param)
+    customer_name = request.args.get('check_name', '')
+    has_ordered = False
+    if customer_name:
+        has_ordered = has_existing_order(baking_day['id'], customer_name)
     
     # Get available quantities
     orders = get_orders_for_baking_day(baking_day['id'])
@@ -293,6 +319,8 @@ def order_page(share_link):
     return render_template('order_page.html', 
                          baking_day=baking_day, 
                          can_order=can_order,
+                         has_ordered=has_ordered,
+                         customer_name=customer_name,
                          order_deadline=order_deadline)
 
 @app.route('/submit_order/<share_link>', methods=['POST'])
@@ -308,7 +336,12 @@ def submit_order(share_link):
         return redirect(url_for('order_page', share_link=share_link))
     
     name = request.form.get('name')
-    phone = request.form.get('phone')
+    address = request.form.get('address')
+    
+    # Check for existing order
+    if has_existing_order(baking_day['id'], name):
+        flash('You have already placed an order for this baking day.')
+        return redirect(url_for('order_page', share_link=share_link, check_name=name))
     
     # Get quantities for each bread type
     bread_orders = []
@@ -328,12 +361,12 @@ def submit_order(share_link):
                 })
                 total_quantity += quantity
     
-    if not name or not phone or not bread_orders:
+    if not name or not address or not bread_orders:
         flash('Please fill in all required fields')
         return redirect(url_for('order_page', share_link=share_link))
     
-    if total_quantity > 5:
-        flash('Maximum 5 loaves total per order')
+    if total_quantity > 2:
+        flash('Maximum 2 loaves total per order')
         return redirect(url_for('order_page', share_link=share_link))
     
     # Check if quantities are available
@@ -350,7 +383,7 @@ def submit_order(share_link):
                     return redirect(url_for('order_page', share_link=share_link))
     
     # Save the order
-    order_id = save_order(baking_day['id'], name, phone, bread_orders)
+    order_id = save_order(baking_day['id'], name, address, bread_orders)
     flash('Your order has been submitted successfully!')
     
     return redirect(url_for('order_page', 
@@ -358,7 +391,7 @@ def submit_order(share_link):
                           order_success=True,
                           order_id=order_id,
                           customer_name=name,
-                          customer_phone=phone))
+                          customer_address=address))
 
 @app.route('/view_orders/<share_link>')
 def view_orders(share_link):

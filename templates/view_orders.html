@@ -54,26 +54,22 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Customer</th>
-                                    <th>Phone</th>
-                                    <th>Order Details</th>
+                                    <th>Name</th>
+                                    <th>Address</th>
+                                    <th>Bread Type</th>
+                                    <th>Quantity</th>
                                     <th>Order Time</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for order_id, order in grouped_orders.items() %}
-                                    <tr>
-                                        <td>{{ order.customer_name }}</td>
-                                        <td>{{ order.customer_phone }}</td>
-                                        <td>
-                                            <ul class="list-unstyled mb-0">
-                                                {% for item in order.bread_items %}
-                                                    <li>{{ item.quantity }}× {{ item.bread_type_name }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                        </td>
-                                        <td>{{ order.created_at.strftime('%I:%M %p') }}</td>
-                                    </tr>
+                                {% for order in orders|sort(attribute='created_at', reverse=true) %}
+                                <tr>
+                                    <td>{{ order.customer_name }}</td>
+                                    <td>{{ order.customer_address }}</td>
+                                    <td>{{ order.bread_type_name }}</td>
+                                    <td>{{ order.quantity }}</td>
+                                    <td>{{ order.created_at.strftime('%I:%M %p') }}</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
