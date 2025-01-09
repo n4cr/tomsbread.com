@@ -1,6 +1,6 @@
-# 🥖 Tom's Bakery - Order Management System
+# 🥖 Tom's Bread - Order Management System
 
-A modern, user-friendly web application for managing bread orders at Tom's Bakery. This system allows bakers to schedule baking days and customers to place orders for their favorite breads.
+A modern, user-friendly web application for managing bread orders at Tom's Bread. This system allows bakers to schedule baking days and customers to place orders for their favorite breads.
 
 ## ✨ Features
 

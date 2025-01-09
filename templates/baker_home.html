@@ -117,7 +117,7 @@ function copyToClipboard(text) {
 }
 
 function shareOnWhatsApp(url, date) {
-    const message = encodeURIComponent(`🥖 Tom's Bakery - Orders for ${date}\n\nPlace your order here:\n${url}`);
+    const message = encodeURIComponent(`🥖 Tom's Bread - Orders for ${date}\n\nPlace your order here:\n${url}`);
     window.open(`https://wa.me/?text=${message}`, '_blank');
     return false;
 }
