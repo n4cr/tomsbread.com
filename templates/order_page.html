@@ -167,14 +167,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function checkExistingOrder(name) {
-    if (name) {
-        const currentUrl = new URL(window.location.href);
-        // Remove any existing check_name parameter
-        currentUrl.searchParams.delete('check_name');
-        // Add the new check_name parameter
-        currentUrl.searchParams.set('check_name', name);
-        window.location.href = currentUrl.toString();
+    if (!name) return;
+
+    // Get the current share_link from the URL
+    const pathParts = window.location.pathname.split('/');
+    const shareLink = pathParts[pathParts.length - 1];
+
+    // Create warning div if it doesn't exist
+    let warningDiv = document.querySelector('.existing-order-warning');
+    if (!warningDiv) {
+        warningDiv = document.createElement('div');
+        warningDiv.className = 'alert alert-warning mb-4 existing-order-warning';
+        warningDiv.style.display = 'none';
+        const nameInput = document.getElementById('customerName');
+        nameInput.parentNode.insertBefore(warningDiv, nameInput.nextSibling);
     }
+
+    // Make the API call
+    fetch(`/check_existing_order/${shareLink}?name=${encodeURIComponent(name)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_ordered) {
+                warningDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Notice:</strong> It looks like you (${data.customer_name}) have already placed an order for this baking day.
+                    To avoid double booking, please only place another order if this is a different person with the same name.
+                `;
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking existing order:', error);
+        });
 }
 
 function updateTotal() {

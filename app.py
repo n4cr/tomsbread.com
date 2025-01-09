@@ -447,6 +447,22 @@ def health_check():
             'error': str(e)
         }), 500
 
+@app.route('/check_existing_order/<share_link>')
+def check_existing_order(share_link):
+    baking_day = get_baking_day_by_share_link(share_link)
+    if not baking_day:
+        return jsonify({'error': 'Baking day not found'}), 404
+    
+    name = request.args.get('name', '').strip()
+    if not name:
+        return jsonify({'has_ordered': False})
+    
+    has_ordered = has_existing_order(baking_day['id'], name)
+    return jsonify({
+        'has_ordered': has_ordered,
+        'customer_name': name
+    })
+
 if __name__ == '__main__':
     # Create data files if they don't exist
     for filepath in [BREAD_TYPES_FILE, BAKING_DAYS_FILE, ORDERS_FILE]:
