@@ -32,7 +32,10 @@ builder:
   remote: ssh://root@5.78.74.178
 
 proxy:
-  host: tomsbread.com
+  hosts:
+    - tomsbread.com
+    - www.tomsbread.com
+    - tomsbakery.semicolon.io
   ssl: true
   forward_headers: true
   app_port: 8000
