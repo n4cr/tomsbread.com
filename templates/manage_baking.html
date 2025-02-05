@@ -18,14 +18,14 @@
             <div class="card-body p-4">
                 <form action="{{ url_for('add_baking_day') }}" method="POST">
                     <div class="mb-4">
-                        <label class="form-label fs-4">Which day will you bake?</label>
-                        <select name="weekday" class="form-select form-select-lg fs-5" required>
-                            <option value="">Choose a day...</option>
-                            {% for day in weekdays %}
-                            <option value="{{ day }}">{{ day }}</option>
+                        <label class="form-label fs-4">When will you bake?</label>
+                        <select name="baking_date" class="form-select form-select-lg fs-5" required>
+                            <option value="">Choose a date...</option>
+                            {% for date in available_dates %}
+                            <option value="{{ date.formatted }}">{{ date.display }}</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text fs-5 mt-2">This will be scheduled for the next {{ weekdays[0] if weekdays else 'Monday' }}</div>
+                        <div class="form-text fs-5 mt-2">Select a date within the next 2 weeks</div>
                     </div>
                     
                     <div class="mb-4">

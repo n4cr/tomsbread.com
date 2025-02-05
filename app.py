@@ -220,9 +220,22 @@ def baker_home():
 @login_required
 def manage_baking():
     bread_types = get_bread_types()
+    
+    # Generate dates for the next 2 weeks
+    available_dates = []
+    today = datetime.now().date()
+    for i in range(1, 15):  # 14 days (2 weeks)
+        future_date = today + timedelta(days=i)
+        available_dates.append({
+            'date': future_date,
+            'weekday': future_date.strftime('%A'),
+            'formatted': future_date.strftime('%Y-%m-%d'),
+            'display': future_date.strftime('%A, %B %d')
+        })
+    
     return render_template('manage_baking.html', 
                          bread_types=bread_types,
-                         weekdays=WEEKDAYS)
+                         available_dates=available_dates)
 
 @app.route('/delete_bread_type/<bread_type_id>', methods=['POST'])
 @login_required
@@ -246,12 +259,11 @@ def add_bread_type():
 @app.route('/add_baking_day', methods=['POST'])
 @login_required
 def add_baking_day():
-    weekday = request.form.get('weekday')
+    baking_date = request.form.get('baking_date')
     bread_types = request.form.getlist('bread_types[]')
     quantities = request.form.getlist('quantities[]')
     
-    if weekday and bread_types and quantities:
-        next_date = get_next_weekday(weekday)
+    if baking_date and bread_types and quantities:
         bread_options = []
         for bread_type_id, quantity in zip(bread_types, quantities):
             bread_options.append({
@@ -259,8 +271,9 @@ def add_baking_day():
                 'max_quantity': int(quantity)
             })
         
-        baking_day = save_baking_day(next_date.strftime('%Y-%m-%d'), bread_options)
-        flash(f'Baking day added for next {weekday}!')
+        baking_day = save_baking_day(baking_date, bread_options)
+        selected_date = datetime.strptime(baking_date, '%Y-%m-%d').date()
+        flash(f'Baking day added for {selected_date.strftime("%A, %B %d")}!')
     
     return redirect(url_for('baker_home'))
 
